@@ -1,5 +1,6 @@
 package selenium.driver;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -13,7 +14,7 @@ import org.openqa.selenium.opera.OperaDriver;
 import org.openqa.selenium.opera.OperaOptions;
 import org.openqa.selenium.remote.DesiredCapabilities;
 
-import io.github.bonigarcia.wdm.WebDriverManager;
+import java.util.concurrent.TimeUnit;
 
 public class WebDriverBuilder {
 
@@ -43,19 +44,19 @@ public class WebDriverBuilder {
         DesiredCapabilitiesFactory desiredCapabilitiesFactory = new DesiredCapabilitiesFactory();
         DesiredCapabilities capabilities = desiredCapabilitiesFactory.initDesiredCapabilities(webDriverConfig);
         String browser = webDriverConfig.getBrowserName();
+        int implicityWait = webDriverConfig.getImplicitlyWait();
         WebDriver driver;
-
         switch (browser) {
-            case "chrome": {
-                WebDriverManager.chromedriver().setup();
-                ChromeOptions options = desiredCapabilitiesFactory.chromeOptions(capabilities, userAgent, disableCookies);
-                driver = new ChromeDriver(options);
+            case "firefox": {
+                WebDriverManager.firefoxdriver().setup();
+                FirefoxOptions options = desiredCapabilitiesFactory.firefoxOptions(capabilities, userAgent);
+                driver = new FirefoxDriver(options);
                 break;
             }
-            case "chrome-headless": {
-                WebDriverManager.chromedriver().setup();
-                ChromeOptions options = desiredCapabilitiesFactory.chromeOptions(capabilities, userAgent, disableCookies);
-                driver = new ChromeDriver(options.setHeadless(true));
+            case "firefox-headless": {
+                WebDriverManager.firefoxdriver().setup();
+                FirefoxOptions options = desiredCapabilitiesFactory.firefoxOptions(capabilities, userAgent);
+                driver = new FirefoxDriver(options.setHeadless(true));
                 break;
             }
             case "edge": {
@@ -76,18 +77,19 @@ public class WebDriverBuilder {
                 driver = new OperaDriver(options);
                 break;
             }
-            case "firefox-headless": {
-                WebDriverManager.firefoxdriver().setup();
-                FirefoxOptions options = desiredCapabilitiesFactory.firefoxOptions(capabilities, userAgent);
-                driver = new FirefoxDriver(options.setHeadless(true));
+            case "chrome-headless": {
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions options = desiredCapabilitiesFactory.chromeOptions(capabilities, userAgent, disableCookies);
+                driver = new ChromeDriver(options.setHeadless(true));
                 break;
             }
-            default:
-                WebDriverManager.firefoxdriver().setup();
-                FirefoxOptions options = desiredCapabilitiesFactory.firefoxOptions(capabilities, userAgent);
-                driver = new FirefoxDriver(options);
+            default: // = chrome
+                WebDriverManager.chromedriver().setup();
+                ChromeOptions options = desiredCapabilitiesFactory.chromeOptions(capabilities, userAgent, disableCookies);
+                driver = new ChromeDriver(options);
         }
 
+        driver.manage().timeouts().implicitlyWait(implicityWait, TimeUnit.SECONDS);
         driver.manage().window().maximize();
         return driver;
     }

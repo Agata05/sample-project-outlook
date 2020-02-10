@@ -1,18 +1,15 @@
 package selenium;
 
-import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
 import org.openqa.selenium.WebDriver;
 
+import org.testng.SkipException;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import selenium.configurations.TestConfig;
 import selenium.driver.WebDriverConfig;
 import selenium.utils.WebDriverProvider;
 import selenium.utils.annotations.DisableCookies;
-import selenium.utils.annotations.RepeatRule;
 import selenium.utils.annotations.UserAgent;
 import selenium.utils.annotations.browser.Browser;
 import selenium.utils.annotations.browser.BrowserDimension;
@@ -22,12 +19,9 @@ import selenium.utils.annotations.browser.Browsers;
 public abstract class SeleniumTestWrapper {
 
 	// Config
-	protected static final TestConfig testConfig = new TestConfig();
+	protected final TestConfig testConfig = new TestConfig();
 	private final WebDriverConfig webDriverConfig = new WebDriverConfig();
 	protected final WebDriverProvider webDriverProvider = new WebDriverProvider(this.webDriverConfig);
-
-	@Rule
-	public RepeatRule repeatRule = new RepeatRule();
 
 	protected WebDriver getDriver() {
 		return this.webDriverProvider.getDriver();
@@ -36,7 +30,7 @@ public abstract class SeleniumTestWrapper {
 	/**
 	 * test class annotations
 	 */
-	@Before
+	@BeforeClass
 	public void setUserAgent(){
 		UserAgent userAgent = this.getClass().getAnnotation(UserAgent.class);
 		if (userAgent != null) {
@@ -44,7 +38,7 @@ public abstract class SeleniumTestWrapper {
 		}
 	}
 
-	@Before
+	@BeforeClass
 	public void disableCookies(){
 		DisableCookies cookies = this.getClass().getAnnotation(DisableCookies.class);
 		if (cookies != null) {
@@ -52,18 +46,22 @@ public abstract class SeleniumTestWrapper {
 		}
 	}
 
-	@Before
+	@BeforeClass
 	public void browser() throws Exception {
 		Browser browser = this.getClass().getAnnotation(Browser.class);
 		if (browser != null){
 			if (browser.require().length > 0 && browser.skip().length == 0){
 				String browsers = concatinateBrowsers(browser.require());
-				assumeTrue("only execute test against " + browsers, browsers.contains(testConfig.getBrowser()));
+				if (browsers.contains(testConfig.getBrowser())) {
+					throw new SkipException("only execute test against " + browsers);
+				}
 			}
 
 			if (browser.skip().length > 0 && browser.require().length == 0){
 				String browsers = concatinateBrowsers(browser.skip());
-				assumeFalse("skip test against " + browsers, browsers.contains(testConfig.getBrowser()));
+				if (browsers.contains(testConfig.getBrowser())) {
+					throw new SkipException("skip test against " + browsers);
+				}
 			}
 		}
 	}
@@ -74,7 +72,7 @@ public abstract class SeleniumTestWrapper {
 		return concatinatedBrowsers.substring(0,concatinatedBrowsers.lastIndexOf("&"));
 	}
 
-	@Before
+	@BeforeClass
 	public void browserDimension(){
 		BrowserDimension browserDimension = this.getClass().getAnnotation(BrowserDimension.class);
 		if (browserDimension != null) {
@@ -82,7 +80,7 @@ public abstract class SeleniumTestWrapper {
 		}
 	}
 
-	@After
+	@AfterClass
 	public void closeBrowser(){
 		getDriver().quit();
 	}
